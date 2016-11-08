@@ -1,8 +1,78 @@
 #include <iostream>
+#include <time.h>
 #include <libusb.h>
 
 using namespace std;
 
+void print_response(int length)
+{
+	int actual; //used to find out how many bytes were read
+	r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
+	if(r < 0) {
+		cout<<"Cannot Claim Interface"<<endl;
+		return 1;
+	}
+	cout<<"Claimed Interface"<<endl;
+	
+	//Reading response
+	unsigned char *data = new unsigned char[8]; //data to write
+	cout<<"Reading Data..."<<endl;
+	r = libusb_bulk_transfer(dev_handle, (129 | LIBUSB_ENDPOINT_IN), data, length, &actual, 0); //my device's in endpoint was 129
+	if(r == 0 && actual == length) //we read 1 byte successfully
+	{
+		cout<<"Reading Successful!"<<endl;
+		cout<<"Data->";
+		int i;
+		for(i = 0; i<length; i++)
+			cout<<(int)data[i]<<" "; 
+		cout<<endl;
+	}
+	else
+		cout<<"Read Error"<<endl;
+	
+	
+	r = libusb_release_interface(dev_handle, 0); //release the claimed interface
+	if(r!=0) {
+		cout<<"Cannot Release Interface"<<endl;
+		return 1;
+	}
+	cout<<"Released Interface"<<endl;
+}
+
+void send_command(unsigned char *data, int length)
+{
+	int actual; //used to find out how many bytes were written
+	r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
+	if(r < 0) {
+		cout<<"Cannot Claim Interface"<<endl;
+		return 1;
+	}
+	cout<<"Claimed Interface"<<endl;
+	
+	cout<<"Writing Data..."<<endl;
+	int i;
+	cout<<"Data->";
+	for(i = 0; i< length; i++)
+	{
+		cout<<data[i]<<" ";
+	}
+	cout<<endl;
+
+	r = libusb_bulk_transfer(dev_handle, (129 | LIBUSB_ENDPOINT_OUT), data, length, &actual, 0); //my device's in endpoint was 129
+	if(r == 0 && actual == length) //we read 1 byte successfully
+	{
+		cout<<"Writing Successful!"<<endl;
+	}
+	else
+		cout<<" Error"<<endl;
+	
+	r = libusb_release_interface(dev_handle, 0); //release the claimed interface
+	if(r!=0) {
+		cout<<"Cannot Release Interface"<<endl;
+		return 1;
+	}
+	cout<<"Released Interface"<<endl;
+}
 int main() {
 	libusb_device_handle *dev_handle; //a device handle
 	libusb_context *ctx = NULL; //a libusb session
@@ -21,47 +91,54 @@ int main() {
 		cout<<"Device Opened"<<endl;
 
 	unsigned char *data = new unsigned char[2]; //data to write
-	data[0]=(unsigned char)27;data[1]=(unsigned char)118; //some dummy values
 
-	int actual; //used to find out how many bytes were written
 	if(libusb_kernel_driver_active(dev_handle, 0) == 1) { //find out if kernel driver is attached
 		cout<<"Kernel Driver Active"<<endl;
 		if(libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
 			cout<<"Kernel Driver Detached!"<<endl;
 	}
-	r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
-	if(r < 0) {
-		cout<<"Cannot Claim Interface"<<endl;
-		return 1;
-	}
-	cout<<"Claimed Interface"<<endl;
-	
-	cout<<"Data->"<<(int)data[0]<<(int)data[1]<<"<-"<<endl; 
-	cout<<"Writing Data..."<<endl;
-	r = libusb_bulk_transfer(dev_handle, (2 | LIBUSB_ENDPOINT_OUT), data, 2, &actual, 0); //my device's out endpoint was 2
-	if(r == 0 && actual == 2) //we wrote the 4 bytes successfully
-		cout<<"Writing Successful!"<<endl;
-	else
-		cout<<"Write Error"<<endl;
 
-	//Reading response
-	cout<<"Reading Data..."<<endl;
-	r = libusb_bulk_transfer(dev_handle, (129 | LIBUSB_ENDPOINT_IN), data, 1, &actual, 0); //my device's in endpoint was 129
-	if(r == 0 && actual == 1) //we read 1 byte successfully
-	{
-		cout<<"Reading Successful!"<<endl;
-		cout<<"Data->"<<(int)data[0]<<"<-"<<endl; 
-	}
-	else
-		cout<<"Read Error"<<endl;
+	//check status (for testing if our code broke)
+	data[0]=(unsigned char)27;data[1]=(unsigned char)118;
+	send_command(data, 2);
+	print_response(1);
+
+	//Initilize printer
+	data[0]=(unsigned char)27;data[1]=(unsigned char)64; 
+	send_command(data, 2);
+
+	sleep(1);
+
+	//Send characters to buffer
+	data[0]=(unsigned char)'H'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'e'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'l'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'l'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'o'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)' '; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'W'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'o'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'r'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'l'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'d'; 
+	send_command(data, 1);
+	data[0]=(unsigned char)'!'; 
+	send_command(data, 1);
+	
+	data[0]=(unsigned char)10; 
+	send_command(data, 1);
 	
 	
-	r = libusb_release_interface(dev_handle, 0); //release the claimed interface
-	if(r!=0) {
-		cout<<"Cannot Release Interface"<<endl;
-		return 1;
-	}
-	cout<<"Released Interface"<<endl;
 
 	libusb_close(dev_handle); //close the device we opened
 	libusb_exit(ctx); //needs to be called to end the
