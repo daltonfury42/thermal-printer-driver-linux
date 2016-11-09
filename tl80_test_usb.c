@@ -1,21 +1,22 @@
 #include <iostream>
-#include <time.h>
 #include <libusb.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 using namespace std;
-
-void print_response(int length)
+unsigned char *data;
+void print_response(libusb_device_handle *dev_handle, int length)
 {
 	int actual; //used to find out how many bytes were read
+	int r; // for return values
 	r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
 	if(r < 0) {
 		cout<<"Cannot Claim Interface"<<endl;
-		return 1;
+		exit(0);
 	}
 	cout<<"Claimed Interface"<<endl;
 	
 	//Reading response
-	unsigned char *data = new unsigned char[8]; //data to write
 	cout<<"Reading Data..."<<endl;
 	r = libusb_bulk_transfer(dev_handle, (129 | LIBUSB_ENDPOINT_IN), data, length, &actual, 0); //my device's in endpoint was 129
 	if(r == 0 && actual == length) //we read 1 byte successfully
@@ -34,18 +35,19 @@ void print_response(int length)
 	r = libusb_release_interface(dev_handle, 0); //release the claimed interface
 	if(r!=0) {
 		cout<<"Cannot Release Interface"<<endl;
-		return 1;
+		exit(0); 
 	}
 	cout<<"Released Interface"<<endl;
 }
 
-void send_command(unsigned char *data, int length)
+void send_command(libusb_device_handle *dev_handle, int length)
 {
 	int actual; //used to find out how many bytes were written
+	int r; // for return values
 	r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
 	if(r < 0) {
 		cout<<"Cannot Claim Interface"<<endl;
-		return 1;
+		exit(0); 
 	}
 	cout<<"Claimed Interface"<<endl;
 	
@@ -58,7 +60,7 @@ void send_command(unsigned char *data, int length)
 	}
 	cout<<endl;
 
-	r = libusb_bulk_transfer(dev_handle, (129 | LIBUSB_ENDPOINT_OUT), data, length, &actual, 0); //my device's in endpoint was 129
+	r = libusb_bulk_transfer(dev_handle, (2 | LIBUSB_ENDPOINT_OUT), data, length, &actual, 0); //my device's in endpoint was 129
 	if(r == 0 && actual == length) //we read 1 byte successfully
 	{
 		cout<<"Writing Successful!"<<endl;
@@ -69,7 +71,7 @@ void send_command(unsigned char *data, int length)
 	r = libusb_release_interface(dev_handle, 0); //release the claimed interface
 	if(r!=0) {
 		cout<<"Cannot Release Interface"<<endl;
-		return 1;
+		exit(0); 
 	}
 	cout<<"Released Interface"<<endl;
 }
@@ -90,7 +92,6 @@ int main() {
 	else
 		cout<<"Device Opened"<<endl;
 
-	unsigned char *data = new unsigned char[2]; //data to write
 
 	if(libusb_kernel_driver_active(dev_handle, 0) == 1) { //find out if kernel driver is attached
 		cout<<"Kernel Driver Active"<<endl;
@@ -98,45 +99,47 @@ int main() {
 			cout<<"Kernel Driver Detached!"<<endl;
 	}
 
+	data = new unsigned char[2]; //data to write
+
 	//check status (for testing if our code broke)
 	data[0]=(unsigned char)27;data[1]=(unsigned char)118;
-	send_command(data, 2);
-	print_response(1);
+	send_command(dev_handle, 2);
+	print_response(dev_handle, 1);
 
 	//Initilize printer
 	data[0]=(unsigned char)27;data[1]=(unsigned char)64; 
-	send_command(data, 2);
+	send_command(dev_handle, 2);
 
 	sleep(1);
 
 	//Send characters to buffer
 	data[0]=(unsigned char)'H'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'e'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'l'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'l'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'o'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)' '; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'W'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'o'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'r'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'l'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'d'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	data[0]=(unsigned char)'!'; 
-	send_command(data, 1);
+	send_command(dev_handle, 1);
 	
-	data[0]=(unsigned char)10; 
-	send_command(data, 1);
+//	data[0]=(unsigned char)10; 
+//	send_command(dev_handle, data, 1);
 	
 	
 
