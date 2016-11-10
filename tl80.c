@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/usb.h>
+#include <linux/delay.h>
  
 #define MIN(a,b) (((a) <= (b)) ? (a) : (b))
 #define BULK_EP_OUT 0x02
@@ -56,6 +57,8 @@ static ssize_t node_write(struct file *f, const char __user *buf, size_t cnt, lo
 		printk(KERN_ERR "Printer Initilication failed with error %d\n", retval);
 		return retval;
 	}
+	
+	ssleep(1);
 	 
 	if (copy_from_user(bulk_buf, buf, MIN(cnt, MAX_PKT_SIZE)))
 	{
