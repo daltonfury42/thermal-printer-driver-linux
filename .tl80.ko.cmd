@@ -1,0 +1,1 @@
+cmd_/home/kiosk/thermal-printer-driver-linux/tl80.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/kiosk/thermal-printer-driver-linux/tl80.ko /home/kiosk/thermal-printer-driver-linux/tl80.o /home/kiosk/thermal-printer-driver-linux/tl80.mod.o

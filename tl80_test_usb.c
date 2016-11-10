@@ -138,8 +138,8 @@ int main() {
 	data[0]=(unsigned char)'!'; 
 	send_command(dev_handle, 1);
 	
-//	data[0]=(unsigned char)10; 
-//	send_command(dev_handle, data, 1);
+	data[0]=(unsigned char)10; 
+	send_command(dev_handle, 1);
 	
 	
 
